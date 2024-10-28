@@ -1,3 +1,4 @@
+import random
 # Function generate deck()
 def generateDeck():
     deck = set()
@@ -22,6 +23,23 @@ def countCards(hand):
     return counter
 
 # Function quiz(current count)
+def quiz(counter):
+    randomInt = random.randint(1,5)
+    if randomInt == 5:
+        while True:
+            try:
+                answer = int(input("Current Count: "))
+            except ValueError:
+                print("Please enter a number.")
+            else:
+                print(f"Counter: {counter}")
+                if answer == counter:
+                    print("You are correct!")
+
+                else:
+                    print(f"Incorrect. Current Count: {counter}")
+                return answer == counter
+
 #      Generate a random number from 1-5
 #      If the random number is 5 (20%)
 #           Ask the user to input the current count
@@ -136,19 +154,21 @@ def definePlayerCount():
 # Set game in progress = false
 # Set card count = 0
 def main():
+
     round = 1
     playerCount = 0
     gameInProgress = False
     cardCount = 0
     deck = generateDeck()
-    playerCount = 0
+    playerCount = definePlayerCount()
+    correctGuess = 0
+    incorrectGuess = 0
+
     # Print a message to greet the user
     # Print rules and restraints of the blackjack program
     print("Welcome to this simulated blackjack where you can practice card counting")
     print("Due to constraints, players cannot double down and can only split a maximum of once per hand!")
     print("There can also only be a maximum of 3 players at the table.")
-
-    playerCount = definePlayerCount()
 
     if playerCount == 0:
         print("I cannot start a game of blackjack without any players.")
