@@ -1,4 +1,5 @@
 import random
+
 # Function generate deck()
 def generateDeck():
     deck = set()
@@ -24,15 +25,14 @@ def countCards(hand):
 
 # Function quiz(current count)
 def quiz(counter):
-    randomInt = random.randint(1,5)
+    randomInt = random.randint(5,5)
     if randomInt == 5:
         while True:
             try:
-                answer = int(input("Current Count: "))
+                answer = int(input("\nCurrent Count: "))
             except ValueError:
                 print("Please enter a number.")
             else:
-                print(f"Counter: {counter}")
                 if answer == counter:
                     print("You are correct!")
 
@@ -40,17 +40,13 @@ def quiz(counter):
                     print(f"Incorrect. Current Count: {counter}")
                 return answer == counter
 
-#      Generate a random number from 1-5
-#      If the random number is 5 (20%)
-#           Ask the user to input the current count
-#           If correct
-#               Return and inform the user it is correct
-#           Else
-#               Input: Ask user if they want to try again
-#               If yes
-#                     Ask the user to input the current count again
-#               If no
-#                     Show user the current count
+def quizTally(right, wrong, counter):
+    result = quiz(counter)
+    if result == True:
+        right += 1
+    elif result == False:
+        wrong += 1
+    return [right, wrong]
 
 # Function play(current hand and current deck)
 def convertHand(hand):
@@ -80,15 +76,16 @@ def play(hand, deck, counter, split = False, dealer = False):
             card = 1
         handVal += card
 
-    print("Current hand: ", handVal)
+    if dealer == False:
+        print("\nCurrent hand: ", handVal)
 
     # check for >= 21
     if handVal >= 21:
         if handVal == 21:
-            print("21!")
+            print("\n21!")
         else:
-            print("Busted!")
-        return [handVal]
+            print("\nBusted!")
+        return [handVal], counter
     
     while dealer == True:
         if handVal < 17:
@@ -99,9 +96,9 @@ def play(hand, deck, counter, split = False, dealer = False):
 
     while dealer == False:
         if len(hand) == 2 and hand[0] == hand[1] and split == False:
-            action = input("Would you like to hit(H), stand(S), or split(SP)?\n")
+            action = input("Would you like to hit(H), stand(S), or split(SP)? ")
         else:
-            action = input("Would you like to hit(H) or stand(S)?\n")
+            action = input("Would you like to hit(H) or stand(S)? ")
         
         if action in ["H", "S"]:
             break
@@ -114,28 +111,27 @@ def play(hand, deck, counter, split = False, dealer = False):
         case "H":
             newCard = deck.pop()
             counter += countCards([newCard])
-            print(newCard)
+            print(f"\n{newCard}")
             hand += convertHand([newCard])
             if dealer == True:
                 return play(hand, deck, counter, False, True)
             return play(hand, deck, counter)
         case "S":
-            print(handVal)
-            return [handVal]
+            return [handVal], counter
         case "SP":
             print("First Hand: ")
             newCard = deck.pop()
             counter += countCards([newCard])
             print([originalHand[0], newCard])
-            firstHand = play([originalHand[0], newCard], deck, counter, True)
+            firstHand, counter = play([originalHand[0], newCard], deck, counter, True)
 
             print("Second Hand: ")
             newCard = deck.pop()
             counter += countCards([newCard])
             print([originalHand[1], newCard])
-            secondHand = play([originalHand[1], newCard], deck, counter, True)
+            secondHand, counter = play([originalHand[1], newCard], deck, counter, True)
 
-            return firstHand + secondHand
+            return firstHand + secondHand, counter
             
 def definePlayerCount():
     players = 0
@@ -143,40 +139,42 @@ def definePlayerCount():
         try:
             players = int(input("Please enter the amount of players at the table: "))
         except ValueError:
-            # playerCount = int(input("Please a valid number."))
             print("Please a valid number.")
         else:
             break
     return players
-# Main Program()
 
-# Set player count = 0
-# Set game in progress = false
-# Set card count = 0
 def main():
 
-    round = 1
+    turn = 1
     playerCount = 0
     gameInProgress = False
     cardCount = 0
     deck = generateDeck()
-    playerCount = definePlayerCount()
     correctGuess = 0
     incorrectGuess = 0
 
     # Print a message to greet the user
     # Print rules and restraints of the blackjack program
-    print("Welcome to this simulated blackjack where you can practice card counting")
-    print("Due to constraints, players cannot double down and can only split a maximum of once per hand!")
-    print("There can also only be a maximum of 3 players at the table.")
+    print("Welcome to this simulated blackjack where you can practice card counting!\n")
+    print("Here are the card counting rules that are followed: ")
+    print("  2, 3, 4, 5, 6 -> +1")
+    print("  7, 8, 9 -> 0")
+    print("  10, J, Q, K, A -> -1\n")
+    print("This simulation also has a few constraints: ")
+    print(" - No Double Down")
+    print(" - Max one split per hand")
+    print(" - Max 3 players per table\n")
+
+    playerCount = definePlayerCount()
 
     if playerCount == 0:
-        print("I cannot start a game of blackjack without any players.")
+        print("\nI cannot start a game of blackjack without any players.")
     # User Input of confirmation to start the game (sets game in progress to true)
     elif playerCount > 3:
-        print("I cannot start a game of blackjack with more than 3 players.")
+        print("\nI cannot start a game of blackjack with more than 3 players.")
     else:
-        print(f"I have confirmed that there will be {playerCount} player{'s' if playerCount > 1 else ''} in the game.")
+        print(f"\nI have confirmed that there will be {playerCount} player{'s' if playerCount > 1 else ''} in the game.\n")
 
         confirmStart = ""
         while confirmStart != "Y" and confirmStart != "N":
@@ -191,16 +189,18 @@ def main():
     # Loop while the game in progress is true
     while gameInProgress:
         # Set dealer hand to two popped values from the deck
-        print(f"Round {round}")
+        print(f"\nRound {turn}")
         dealerHand = [deck.pop(), deck.pop()]
         cardCount += countCards([dealerHand[0]])
         print(f"Dealer's hand: {dealerHand[0]}, _")
+        [correctGuess, incorrectGuess] = quizTally(correctGuess, incorrectGuess, cardCount)
         playerHands = {}
         for i in range(playerCount):
             initialHand = [deck.pop(), deck.pop()]
             cardCount += countCards(initialHand)
-            print(f"Player {i+1}'s hand: \n", initialHand)
-            finalScores = play(initialHand, deck, cardCount)
+            print(f"\nPlayer {i+1}'s hand: \n", initialHand)
+            [correctGuess, incorrectGuess] = quizTally(correctGuess, incorrectGuess, cardCount)
+            finalScores, cardCount = play(initialHand, deck, cardCount)
             playerHands[f"Player {i+1}"] = finalScores
         
         # Summary
@@ -214,28 +214,30 @@ def main():
         print("||_________________________")
 
         # Dealer plays
-        print("Dealer:\n", f"{dealerHand}")
+        print(f"\nDealer: \n{dealerHand}")
         cardCount += countCards([dealerHand[1]])
-        dealerSum = play(dealerHand, deck, cardCount, False, True)
-        print("Dealer's Hand Value: \n", dealerSum)
+        [correctGuess, incorrectGuess] = quizTally(correctGuess, incorrectGuess, cardCount)
+        [dealerSum], cardCount = play(dealerHand, deck, cardCount, False, True)
+        print(f"\nDealer's Hand Value: \n{dealerSum}")
 
         # which players win?
         for player in playerHands:
             handsWon = 0
-            for hands in player:
-                if player[hands] > dealerHand and player[hands] < 22:
+            for hands in playerHands[player]:
+                if hands > dealerSum and hands < 22:
                     handsWon += 1
             if handsWon > 0:
-                print(f"{playerHands[player]} wins {handsWon} hand{'s' if handsWon > 1 else ''}!")
+                print(f"\n{player} wins {handsWon} hand{'s' if handsWon > 1 else ''}!")
             else:
-                print(f"{playerHands[player]} was not a winner.")
+                print(f"\n{player} was not a winner.")
 
         # Check deck to see if there are enough cards
         while True:
-            cont = input(print("Continue playing? (Y/N)"))
+            cont = input("\nContinue playing? (Y/N) ")
             if cont == "Y":
+                turn += 1
                 while True:
-                    samePlayers = input(print("Would you like to keep the same amount of players (changing player count reshuffles the deck)? (Y/N)"))
+                    samePlayers = input("Would you like to keep the same amount of players (changing player count reshuffles the deck)? (Y/N) ")
                     if samePlayers == "Y" or samePlayers == "N":
                         break
                     else:
@@ -243,34 +245,19 @@ def main():
                 if len(deck) < 21 or samePlayers == "N":
                     if samePlayers == "N":
                         playerCount = definePlayerCount()
-                    print("Reshuffling.")
+                    print("\nReshuffling...")
                     cardCount = 0
                     deck = generateDeck()
                 break
             elif cont == "N":
                 gameInProgress = False
-                print("Thank you for playing blackjack simulation.")
+                print("Your Score:")
+                print(f"{correctGuess}/{correctGuess + incorrectGuess} correct")
+                print("\nFinal Accuracy:")
+                print(f"{round((correctGuess/(correctGuess + incorrectGuess))*100, 2)}%")
+                print("\nThank you for playing blackjack simulation.")
                 break
             else:
                 print("Please enter either Y or N.")
 
 main()
-#               20% chance of a random quiz function being called
-#           Check if there are enough cards in the deck to play again
-#               If there are only 40% of the deck remaining
-#                     Call generate deck function for a new deck
-#                     Reset card count
-#                     Print a statement informing the user the deck is being reshuffled
-#               Else
-#                     Ask the user if they would like to continue to play
-#                     If the user wants to stop
-#                          Set game in progress to false
-#                     If the user wants to continue
-#                          If a new player is joining
-#                               Reshuffle deck
-#                               Reset card count
-#                     If the user simply wants to play again with the current players
-#                          Reset the dealer's hand
-#                          Reset all player’s hands
-#      Print statement thanking the user for playing
-# print("Thank you for playing blackjack simulation.")
